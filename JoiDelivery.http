@@ -1,0 +1,6 @@
+@JoiDelivery_HostAddress = http://localhost:5198
+
+GET {{JoiDelivery_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
