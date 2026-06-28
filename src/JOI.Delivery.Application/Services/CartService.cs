@@ -10,7 +10,7 @@ public class CartService(
     IProductService productService,
     IUserService userService) : ICartService
 {
-    public CartProductInfo AddProductToCartForUser(AddProductRequest addProductRequest)
+    public CartProductInfo AddProductToCartForUser(ProductRequest addProductRequest)
     {
         Validate(addProductRequest);
 
@@ -40,7 +40,7 @@ public class CartService(
         return cartRepository.GetByUserId(userId);
     }
 
-    private static void Validate(AddProductRequest request)
+    private static void Validate(ProductRequest request)
     {
         ArgumentNullException.ThrowIfNull(request);
 
@@ -60,4 +60,35 @@ public class CartService(
         }
     }
 
+    public bool RemoveProductFromCartForUser(ProductRequest removeProductRequest)
+    {
+        var cart = cartRepository.GetByUserId(removeProductRequest.UserId) ??
+            throw new ApplicationNotFoundException($"Cart for user '{removeProductRequest.UserId}' was not found.");
+
+        var product = productService.GetProduct(removeProductRequest.ProductId, removeProductRequest.OutletId) ??
+            throw new ApplicationNotFoundException($"Product '{removeProductRequest.ProductId}' was not found for outlet '{removeProductRequest.OutletId}'.");
+        if (!cart.Products.Contains(product))
+            throw new ApplicationValidationException($"Product '{removeProductRequest.ProductId}' is not in the cart for user '{removeProductRequest.UserId}'.");
+
+        cart.Products.Remove(product);
+        cartRepository.Save(cart);
+        return true;
+
+    }
+
+    public bool ClearCart(string userId)
+    {
+        var cart = cartRepository.GetByUserId(userId);
+        if (cart != null)
+        {
+            cart.Products.Clear();
+            cartRepository.Save(cart);
+            return true;
+
+        }
+        else
+        {
+            throw new ApplicationNotFoundException($"Cart for user '{userId}' was not found.");
+        }
+    }
 }

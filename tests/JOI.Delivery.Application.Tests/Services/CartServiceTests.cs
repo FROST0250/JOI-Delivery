@@ -18,7 +18,7 @@ public class CartServiceTests
     [Fact]
     public void AddProductToCartForUser_WhenRequestIsValid_AddsProductAndSavesCart()
     {
-        var request = new AddProductRequest { UserId = "user101", ProductId = "product101", OutletId = "store101" };
+        var request = new ProductRequest { UserId = "user101", ProductId = "product101", OutletId = "store101" };
         var user = new User { Id = request.UserId };
         var cart = new Cart { Id = "cart101", User = user };
         var product = new GroceryProduct { Id = request.ProductId, SellingPrice = 7.5f };
@@ -56,7 +56,7 @@ public class CartServiceTests
     [InlineData("user101", "product101", "   ")]
     public void AddProductToCartForUser_WhenRequiredInputIsMissing_ThrowsValidationException(string userId, string productId, string outletId)
     {
-        var request = new AddProductRequest { UserId = userId, ProductId = productId, OutletId = outletId };
+        var request = new ProductRequest { UserId = userId, ProductId = productId, OutletId = outletId };
         var service = CreateService();
 
         var act = () => service.AddProductToCartForUser(request);
@@ -68,7 +68,7 @@ public class CartServiceTests
     [Fact]
     public void AddProductToCartForUser_WhenUserDoesNotExist_ThrowsNotFoundException()
     {
-        var request = CreateValidRequest();
+        var request = CreateAddProductRequest();
         userService.Setup(service => service.FetchUserById(request.UserId)).Returns((User?)null);
         var service = CreateService();
 
@@ -81,7 +81,7 @@ public class CartServiceTests
     [Fact]
     public void AddProductToCartForUser_WhenCartDoesNotExist_ThrowsNotFoundException()
     {
-        var request = CreateValidRequest();
+        var request = CreateAddProductRequest();
         var user = new User { Id = request.UserId };
         userService.Setup(service => service.FetchUserById(request.UserId)).Returns(user);
         cartRepository.Setup(repository => repository.GetByUserId(request.UserId)).Returns((Cart?)null);
@@ -96,7 +96,7 @@ public class CartServiceTests
     [Fact]
     public void AddProductToCartForUser_WhenProductDoesNotExist_ThrowsNotFoundException()
     {
-        var request = CreateValidRequest();
+        var request = CreateAddProductRequest();
         var user = new User { Id = request.UserId };
         var cart = new Cart { Id = "cart101", User = user };
         userService.Setup(service => service.FetchUserById(request.UserId)).Returns(user);
@@ -135,9 +135,53 @@ public class CartServiceTests
         act.Should().Throw<ApplicationValidationException>().WithMessage("User id is required.");
     }
 
-    
+    [Fact]
+    public void RemoveProductFromCartForUser_WhenProductIsInCart_RemovesProductAndSavesCart()
+    {
+        var request = CreateAddProductRequest();
+        var user = new User { Id = request.UserId };
+        var cart = new Cart { Id = "cart101", User = user };
+        var product = new GroceryProduct { Id = request.ProductId, SellingPrice = 7.5f };
+        cart.AddProduct(product);
+        userService.Setup(service => service.FetchUserById(request.UserId)).Returns(user);
+        cartRepository.Setup(repository => repository.GetByUserId(request.UserId)).Returns(cart);
+        productService.Setup(service => service.GetProduct(request.ProductId, request.OutletId)).Returns(product);
+        var service = CreateService();
 
-    private static AddProductRequest CreateValidRequest() => new() { UserId = "user101", ProductId = "product101", OutletId = "store101" };
+        bool result = service.RemoveProductFromCartForUser(request);
+
+        cart.Products.Should().NotContain(product);
+        cartRepository.Verify(repository => repository.Save(cart), Times.Once);
+    }
+
+    [Fact]
+    public void ClearCartForUser_WhenCartExists_RemovesAllProductsAndSavesCart()
+    {
+        var request = CreateAddProductRequest();
+        var user = new User { Id = request.UserId };
+        var cart = new Cart { Id = "cart101", User = user };
+        var product1 = new GroceryProduct { Id = "product101", SellingPrice = 7.5f };
+        var product2 = new GroceryProduct { Id = "product102", SellingPrice = 5.0f };
+
+        cart.AddProduct(product1);
+        cart.AddProduct(product2);
+
+        userService.Setup(service => service.FetchUserById(request.UserId)).Returns(user);
+        productService.Setup(service => service.GetProduct(product1.Id, request.OutletId)).Returns(product1);
+        productService.Setup(service => service.GetProduct(product2.Id, request.OutletId)).Returns(product2);
+        cartRepository.Setup(repository => repository.GetByUserId(request.UserId)).Returns(cart);
+        var service = CreateService();
+
+        //Act
+        var clearRequest = service.ClearCart(request.UserId);
+
+        //Assert
+        cart.Products.Should().BeEmpty();
+        cartRepository.Verify(repository => repository.Save(cart), Times.Once);
+        clearRequest.Should().Be(true);
+    }
+
+    private static ProductRequest CreateAddProductRequest() => new() { UserId = "user101", ProductId = "product101", OutletId = "store101" };
 
     private CartService CreateService() => new(cartRepository.Object, productService.Object, userService.Object);
 }

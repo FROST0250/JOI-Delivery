@@ -10,7 +10,7 @@ namespace JoiDelivery.Controllers;
 public class CartController(ICartService cartService) : ControllerBase
 {
     [HttpPost("product")]
-    public ActionResult<CartProductInfo> AddProductToCart([FromBody] AddProductRequest addProductRequest)
+    public ActionResult<CartProductInfo> AddProductToCart([FromBody] ProductRequest addProductRequest)
     {
         var result = cartService.AddProductToCartForUser(addProductRequest);
 
@@ -24,4 +24,20 @@ public class CartController(ICartService cartService) : ControllerBase
 
         return Ok(cart);
     }
+
+    [HttpDelete("product")]
+    public ActionResult<CartProductInfo> RemoveproductFromCart([FromBody] ProductRequest removeProductRequest)
+    {
+        var result = cartService.RemoveProductFromCartForUser(removeProductRequest);
+
+        return Ok();
+    }
+
+    [HttpPost("clear")]
+    public ActionResult ClearCart([FromBody] string userId)
+    {
+        var result = cartService.ClearCart(userId);
+        return Ok();
+    }
+
 }

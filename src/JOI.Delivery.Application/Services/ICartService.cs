@@ -5,6 +5,8 @@ namespace JoiDelivery.Services;
 
 public interface ICartService
 {
-    CartProductInfo AddProductToCartForUser(AddProductRequest addProductRequest);
+    CartProductInfo AddProductToCartForUser(ProductRequest addProductRequest);
+    bool ClearCart(string userId);
     Cart? GetCartForUser(string userId);
+    bool RemoveProductFromCartForUser(ProductRequest removeProductRequest);
 }
