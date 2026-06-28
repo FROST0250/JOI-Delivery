@@ -21,7 +21,7 @@ public class CartServiceTests
         var request = new ProductRequest { UserId = "user101", ProductId = "product101", OutletId = "store101" };
         var user = new User { Id = request.UserId };
         var cart = new Cart { Id = "cart101", User = user };
-        var product = new GroceryProduct { Id = request.ProductId, SellingPrice = 7.5f };
+        var product = new GroceryProduct { Id = request.ProductId, SellingPrice = 7.5f, AvailableStock = 10};
         userService.Setup(service => service.FetchUserById(request.UserId)).Returns(user);
         cartRepository.Setup(repository => repository.GetByUserId(request.UserId)).Returns(cart);
         productService.Setup(service => service.GetProduct(request.ProductId, request.OutletId)).Returns(product);
@@ -196,10 +196,11 @@ public class CartServiceTests
     public void ClearCartForUser_WhenCartExists_RemovesAllProductsAndSavesCart()
     {
         var request = CreateAddProductRequest();
+        var outletId = Guid.NewGuid().ToString();
         var user = new User { Id = request.UserId };
         var cart = new Cart { Id = "cart101", User = user };
-        var product1 = new GroceryProduct { Id = "product101", SellingPrice = 7.5f };
-        var product2 = new GroceryProduct { Id = "product102", SellingPrice = 5.0f };
+        var product1 = new GroceryProduct { Id = "product101", SellingPrice = 7.5f, Store = new GroceryStore { Id = outletId} };
+        var product2 = new GroceryProduct { Id = "product102", SellingPrice = 5.0f, Store = new GroceryStore { Id = outletId } };
 
         cart.AddProduct(product1);
         cart.AddProduct(product2);

@@ -77,7 +77,7 @@ public class CartService(
         if (!cart.Products.Contains(product))
             throw new ApplicationValidationException($"Product '{removeProductRequest.ProductId}' is not in the cart for user '{removeProductRequest.UserId}'.");
 
-        cart.Products.Remove(product);
+        cart.RemoveProduct(product);
         cartRepository.Save(cart);
         return true;
 
@@ -88,7 +88,7 @@ public class CartService(
         var cart = GetCartForUser(userId);
         if (cart != null)
         {
-            cart.Products.Clear();
+            cart.ClearProducts();
             cartRepository.Save(cart);
             return true;
 

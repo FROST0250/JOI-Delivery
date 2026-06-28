@@ -40,7 +40,6 @@ public sealed class InMemoryDataStore
         return new Cart
         {
             Id = cartId,
-            Outlet = Store101,
             User = CreateUser(userId, firstName, lastName),
         };
     }
