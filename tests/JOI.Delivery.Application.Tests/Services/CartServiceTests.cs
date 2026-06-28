@@ -111,6 +111,44 @@ public class CartServiceTests
         cartRepository.Verify(repository => repository.Save(It.IsAny<Cart>()), Times.Never);
     }
 
+    [Theory]
+    [InlineData(10,9)]
+    [InlineData(5,4)]
+    public void AddProductToCartForUser_WhenProductIsAdded_AvailableStockIsDecreased(int initialStock, int expectedStock)
+    {
+        var request = CreateAddProductRequest();
+        var user = new User { Id = request.UserId };
+        var cart = new Cart { Id = "cart101", User = user };
+        var product = new GroceryProduct { Id = request.ProductId, SellingPrice = 7.5f, AvailableStock = initialStock };
+        userService.Setup(service => service.FetchUserById(request.UserId)).Returns(user);
+        cartRepository.Setup(repository => repository.GetByUserId(request.UserId)).Returns(cart);
+        productService.Setup(service => service.GetProduct(request.ProductId, request.OutletId)).Returns(product);
+        var service = CreateService();
+        service.AddProductToCartForUser(request);
+        product.AvailableStock.Should().Be(expectedStock);
+        cartRepository.Verify(repository => repository.Save(cart), Times.Once);
+    }
+
+    [Fact]
+    public void AddProductToCartForUser_WhenProductAvaliableStockIsZero_ThrowsValidationEexception()
+    {
+        var request = CreateAddProductRequest();
+        var user = new User { Id = request.UserId };
+        var cart = new Cart { Id = "cart101", User = user };
+        var product = new GroceryProduct { Id = request.ProductId, SellingPrice = 7.5f, AvailableStock = 0 };
+
+        userService.Setup(service => service.FetchUserById(request.UserId)).Returns(user);
+        cartRepository.Setup(repository => repository.GetByUserId(request.UserId)).Returns(cart);
+        productService.Setup(service => service.GetProduct(request.ProductId, request.OutletId)).Returns(product);
+
+        var service = CreateService();
+        var result = ()=> service.AddProductToCartForUser(request);
+
+        result.Should().Throw<ApplicationValidationException>().WithMessage($"Product '{request.ProductId}' is out of stock.");
+        cartRepository.Verify(repository => repository.Save(It.IsAny<Cart>()), Times.Never); 
+
+    }
+
     [Fact]
     public void GetCartForUser_WhenUserIdIsValid_ReturnsCartFromRepository()
     {

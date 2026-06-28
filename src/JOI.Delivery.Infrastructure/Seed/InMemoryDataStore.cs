@@ -24,7 +24,7 @@ public sealed class InMemoryDataStore
             CreateGroceryProduct("Crackers", "product103", Store101)
         ];
 
-        Users = [User101];
+        Users = [User101,User102];
     }
 
     public Dictionary<string, Cart> CartForUsers { get; }
