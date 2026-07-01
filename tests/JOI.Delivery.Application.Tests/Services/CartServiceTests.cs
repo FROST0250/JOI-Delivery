@@ -220,6 +220,18 @@ public class CartServiceTests
         clearRequest.Should().Be(true);
     }
 
+    [Fact]
+    public void GetTotal_ShouldApply10PercentSurcharge_WhenOutletIsRestaurant()
+    {
+        var request = CreateAddProductRequest();
+        var user = new User { Id = request.UserId };
+        var restaurant = new Restaurant { Id = "restaurant101", Name = "Test Restaurant" };
+        var product1 = new FoodProduct { Id = "product101", SellingPrice = 10.0f, Restaurant  = restaurant };
+        var cart = new Cart { Id = "Cart1", User = user };
+        cart.AddProduct(product1);
+
+    }
+
     private static ProductRequest CreateAddProductRequest() => new() { UserId = "user101", ProductId = "product101", OutletId = "store101" };
 
     private CartService CreateService() => new(cartRepository.Object, productService.Object, userService.Object);
